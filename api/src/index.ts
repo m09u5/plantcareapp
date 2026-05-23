@@ -1,23 +1,87 @@
-import { Hono } from 'hono'
-import { serve } from '@hono/node-server'
+import express, { type Request, type Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { PrismaLibSql } from '@prisma/adapter-libsql';
+import swaggerUi from 'swagger-ui-express';
+import swaggerJsdoc from 'swagger-jsdoc';
 
-const db = new Database('./db/plants.db')
-const app = new Hono()
+const adapter = new PrismaLibSql({
+  url: process.env.DATABASE_URL || 'file:./dev.db'
+});
+const prisma = new PrismaClient({ adapter });
 
-app.get('/', (c) => {
-  return c.json({ message: 'PlantCare API' })
-})
+const app = express();
+app.use(express.json());
 
-app.get('/plants', (c) => {
-  return c.json({
-    plants: [
-      { id: 1, name: 'Monstera' }
-    ]
-  })
-})
-console.log("Server running on http://localhost:3000")
+// --- Kuloodporna konfiguracja Swaggera (Obiekt JS zamiast komentarzy) ---
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'PlantCare API',
+      version: '1.0.0',
+      description: 'API do zarządzania podlewaniem roślin',
+    },
+    paths: {
+      '/plants': {
+        get: {
+          summary: 'Pobiera listę wszystkich roślin',
+          responses: {
+            '200': { description: 'Lista roślin' }
+          }
+        },
+        post: {
+          summary: 'Dodaje nową roślinę',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string' },
+                    interval: { type: 'integer' },
+                    userId: { type: 'integer' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '201': { description: 'Utworzono roślinę' },
+            '400': { description: 'Błąd podczas tworzenia' }
+          }
+        }
+      }
+    }
+  },
+  // Pusta tablica - wyłączamy awaryjne skanowanie komentarzy, które powodowało błąd!
+  apis: [], 
+};
 
-serve({
-  fetch: app.fetch,
-  port: 3000
-})
+const specs = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+
+// --- Endpointy (już bez problematycznych komentarzy @openapi) ---
+
+app.get('/plants', async (req: Request, res: Response) => {
+  const plants = await prisma.plant.findMany();
+  res.json(plants);
+});
+
+app.post('/plants', async (req: Request, res: Response) => {
+  const { name, interval, userId } = req.body;
+  try {
+    const newPlant = await prisma.plant.create({
+      data: { name, interval, userId },
+    });
+    res.status(201).json(newPlant);
+  } catch (error) {
+    res.status(400).json({ error: "Błąd podczas tworzenia rośliny. Upewnij się, że userId istnieje." });
+  }
+});
+
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Serwer działa na http://localhost:${PORT}`);
+  console.log(`Dokumentacja Swagger: http://localhost:${PORT}/api-docs`);
+});
