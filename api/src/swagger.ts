@@ -91,6 +91,11 @@ export const swaggerUiSetup = swaggerUi.setup(
                     properties: {
                       name: { type: 'string' },
                       interval: { type: 'integer' },
+                      imageUrl: {
+                        type: 'string',
+                        nullable: true,
+                        description: 'Adres URL zdjęcia rośliny albo data:image.',
+                      },
                     },
                   },
                 },
@@ -126,6 +131,34 @@ export const swaggerUiSetup = swaggerUi.setup(
             security: [{ bearerAuth: [] }],
             responses: {
               '200': { description: 'Roślina została podlana' },
+              '404': { description: 'Nie znaleziono rośliny' },
+            },
+          },
+        },
+        '/plants/{id}/photo': {
+          patch: {
+            summary: 'Dodaje lub zmienia zdjęcie rośliny',
+            security: [{ bearerAuth: [] }],
+            requestBody: {
+              required: true,
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      imageUrl: {
+                        type: 'string',
+                        nullable: true,
+                        description: 'Adres URL zdjęcia rośliny albo data:image. Pusta wartość usuwa zdjęcie.',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            responses: {
+              '200': { description: 'Zdjęcie rośliny zostało zapisane' },
+              '400': { description: 'Niepoprawny adres zdjęcia' },
               '404': { description: 'Nie znaleziono rośliny' },
             },
           },

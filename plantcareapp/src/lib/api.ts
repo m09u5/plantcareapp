@@ -17,6 +17,7 @@ export type Plant = {
   name: string;
   lastWatered: string;
   interval: number;
+  imageUrl?: string | null;
   userId: number;
   nextWateringAt: string;
   status: PlantStatus;
@@ -95,19 +96,34 @@ export async function getPlants(token: string) {
   return parseApiResponse<Plant[]>(response);
 }
 
-export async function createPlant(token: string, name: string, interval: number) {
+export async function createPlant(token: string, name: string, interval: number, imageUrl?: string | null) {
   const response = await apiFetch('/plants', token, {
     method: 'POST',
-    body: JSON.stringify({ name, interval }),
+    body: JSON.stringify({ name, interval, imageUrl }),
   });
 
   return parseApiResponse<Plant>(response);
 }
 
-export async function updatePlant(token: string, plantId: number, name: string, interval: number) {
+export async function updatePlant(
+  token: string,
+  plantId: number,
+  name: string,
+  interval: number,
+  imageUrl?: string | null,
+) {
   const response = await apiFetch(`/plants/${plantId}`, token, {
     method: 'PUT',
-    body: JSON.stringify({ name, interval }),
+    body: JSON.stringify({ name, interval, imageUrl }),
+  });
+
+  return parseApiResponse<Plant>(response);
+}
+
+export async function updatePlantPhoto(token: string, plantId: number, imageUrl?: string | null) {
+  const response = await apiFetch(`/plants/${plantId}/photo`, token, {
+    method: 'PATCH',
+    body: JSON.stringify({ imageUrl }),
   });
 
   return parseApiResponse<Plant>(response);

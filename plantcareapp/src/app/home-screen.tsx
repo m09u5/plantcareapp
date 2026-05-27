@@ -1,4 +1,6 @@
 import { Feather } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,7 +14,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Fonts } from "@/constants/theme";
 import { useAuth } from "@/context/auth";
@@ -25,12 +26,12 @@ import {
   type Plant,
 } from "@/lib/api";
 
-type ScreenName = "plants" | "scan" | "settings";
 type DraftPlant = {
   id?: number;
   name: string;
   note: string;
   interval: number;
+  imageUrl?: string | null;
 };
 
 const accentColor = "#00d47a";
@@ -44,6 +45,8 @@ const demoPlants: Plant[] = [
     id: -1,
     name: "Prince's Rose",
     interval: 3,
+    imageUrl:
+      "https://images.unsplash.com/photo-1590682680695-43b964a3ae17?auto=format&fit=crop&w=600&q=80",
     lastWatered: new Date().toISOString(),
     nextWateringAt: new Date(
       Date.now() + 3 * 24 * 60 * 60 * 1000
@@ -55,6 +58,8 @@ const demoPlants: Plant[] = [
     id: -2,
     name: "Living room Bonsai",
     interval: 5,
+    imageUrl:
+      "https://images.unsplash.com/photo-1509223197845-458d87318791?auto=format&fit=crop&w=600&q=80",
     lastWatered: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     nextWateringAt: new Date(
       Date.now() + 2 * 24 * 60 * 60 * 1000
@@ -66,6 +71,8 @@ const demoPlants: Plant[] = [
     id: -3,
     name: "Living room Bonsai",
     interval: 1,
+    imageUrl:
+      "https://images.unsplash.com/photo-1463154545680-d59320fd685d?auto=format&fit=crop&w=600&q=80",
     lastWatered: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     nextWateringAt: new Date(
       Date.now() - 1 * 24 * 60 * 60 * 1000
@@ -108,27 +115,7 @@ function getWaterLevel(plant: Plant) {
   return Math.max(0.06, Math.min(1, remainingRatio));
 }
 
-export function MainAppShell() {
-  const [activeScreen, setActiveScreen] = useState<ScreenName>("plants");
-  const insets = useSafeAreaInsets();
-
-  return (
-    <View style={styles.appRoot}>
-      {activeScreen === "plants" ? (
-        <PlantsScreen />
-      ) : (
-        <PlaceholderScreen title={activeScreen} />
-      )}
-      <BottomNav
-        activeScreen={activeScreen}
-        bottomInset={insets.bottom}
-        onChange={setActiveScreen}
-      />
-    </View>
-  );
-}
-
-function PlantsScreen() {
+export default function HomeScreen() {
   const { token } = useAuth();
   const [plants, setPlants] = useState<Plant[]>(demoPlants);
   const [isLoading, setIsLoading] = useState(false);
@@ -153,7 +140,7 @@ function PlantsScreen() {
       try {
         const apiPlants = await getPlants(authToken);
 
-        if (isMounted && apiPlants.length > 0) {
+        if (isMounted) {
           setPlants(apiPlants);
         }
       } finally {
@@ -246,6 +233,7 @@ function PlantsScreen() {
       name: plant.name,
       note: plantNotes[plant.id] ?? getNote(plant),
       interval: plant.interval,
+      imageUrl: plant.imageUrl ?? "",
     });
   }
 
@@ -254,6 +242,7 @@ function PlantsScreen() {
       name: "My Plant #1",
       note: "",
       interval: 20,
+      imageUrl: "",
     });
   }
 
@@ -261,6 +250,8 @@ function PlantsScreen() {
     if (!draft.name.trim()) {
       return;
     }
+
+    const imageUrl = draft.imageUrl?.trim() || null;
 
     if (draft.id) {
       setPlantNotes((currentNotes) => ({
@@ -274,7 +265,8 @@ function PlantsScreen() {
         token,
         draft.id,
         draft.name,
-        draft.interval
+        draft.interval,
+        imageUrl
       );
       setPlants((currentPlants) =>
         currentPlants.map((currentPlant) =>
@@ -282,7 +274,12 @@ function PlantsScreen() {
         )
       );
     } else if (token && !draft.id) {
-      const newPlant = await createPlant(token, draft.name, draft.interval);
+      const newPlant = await createPlant(
+        token,
+        draft.name,
+        draft.interval,
+        imageUrl
+      );
       setPlantNotes((currentNotes) => ({
         ...currentNotes,
         [newPlant.id]: draft.note,
@@ -299,6 +296,7 @@ function PlantsScreen() {
                 ...plant,
                 name: draft.name,
                 interval: draft.interval,
+                imageUrl,
               }
             : plant
         )
@@ -314,6 +312,7 @@ function PlantsScreen() {
           id: localId,
           name: draft.name,
           interval: draft.interval,
+          imageUrl,
           lastWatered: new Date().toISOString(),
           nextWateringAt: new Date(
             Date.now() + draft.interval * 24 * 60 * 60 * 1000
@@ -396,6 +395,33 @@ function PlantsScreen() {
   );
 }
 
+function PlantPhoto({
+  imageUrl,
+  style,
+}: {
+  imageUrl?: string | null;
+  style: object;
+}) {
+  if (!imageUrl) {
+    return (
+      <View style={[style, styles.emptyImageBox]}>
+        <Feather color="#b8b8b8" name="image" size={20} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={[style, styles.imageFrame]}>
+      <Image
+        contentFit="cover"
+        source={{ uri: imageUrl }}
+        style={styles.plantImage}
+        transition={120}
+      />
+    </View>
+  );
+}
+
 function PlantCard({
   onLongPress,
   onPress,
@@ -425,9 +451,7 @@ function PlantCard({
         ]}
       >
         <Text style={styles.cornerDot}>•</Text>
-        <View style={styles.imagePlaceholder}>
-          <Feather color="#b8b8b8" name="image" size={18} />
-        </View>
+        <PlantPhoto imageUrl={plant.imageUrl} style={styles.imagePlaceholder} />
         <View style={styles.waterColumn}>
           <Feather color={waterBlue} name="droplet" size={16} />
           <View style={styles.waterTrack}>
@@ -464,13 +488,61 @@ function PlantEditorModal({
   onSave: (draft: DraftPlant) => void;
 }) {
   const [localDraft, setLocalDraft] = useState<DraftPlant | null>(draft);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalDraft(draft);
+    setImageError(null);
   }, [draft]);
 
   if (!localDraft) {
     return null;
+  }
+
+  async function pickPlantImage() {
+    setImageError(null);
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      setImageError("Allow gallery access to add a photo.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [184, 127],
+      base64: true,
+      mediaTypes: ["images"],
+      quality: 0.45,
+    });
+
+    if (result.canceled) {
+      return;
+    }
+
+    const asset = result.assets[0];
+
+    if (!asset?.base64) {
+      setImageError("Could not read this photo.");
+      return;
+    }
+
+    const mimeType = asset.mimeType?.startsWith("image/")
+      ? asset.mimeType
+      : "image/jpeg";
+    setLocalDraft((current) =>
+      current
+        ? { ...current, imageUrl: `data:${mimeType};base64,${asset.base64}` }
+        : current
+    );
+  }
+
+  function removePlantImage() {
+    setImageError(null);
+    setLocalDraft((current) =>
+      current ? { ...current, imageUrl: null } : current
+    );
   }
 
   return (
@@ -496,9 +568,38 @@ function PlantEditorModal({
             value={localDraft.name}
           />
           <View style={styles.modalMainRow}>
-            <Pressable style={styles.modalImageBox}>
-              <Feather color="#b8b8b8" name="image" size={21} />
-            </Pressable>
+            <View style={styles.modalImageColumn}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={pickPlantImage}
+                style={({ pressed }) => [pressed && styles.pressed]}
+              >
+                <PlantPhoto
+                  imageUrl={localDraft.imageUrl}
+                  style={styles.modalImageBox}
+                />
+              </Pressable>
+              {localDraft.imageUrl ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={removePlantImage}
+                  style={styles.photoRemoveButton}
+                >
+                  <Feather color="#777777" name="x" size={14} />
+                </Pressable>
+              ) : (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={pickPlantImage}
+                  style={styles.photoActionButton}
+                >
+                  <Text style={styles.photoActionText}>Add photo</Text>
+                </Pressable>
+              )}
+              {imageError ? (
+                <Text style={styles.photoErrorText}>{imageError}</Text>
+              ) : null}
+            </View>
             <View style={styles.noteColumn}>
               <Text style={styles.noteLabel}>Note:</Text>
               <TextInput
@@ -608,81 +709,9 @@ function IntervalSlider({
   );
 }
 
-function BottomNav({
-  activeScreen,
-  bottomInset,
-  onChange,
-}: {
-  activeScreen: ScreenName;
-  bottomInset: number;
-  onChange: (screen: ScreenName) => void;
-}) {
-  const items: { icon: keyof typeof Feather.glyphMap; screen: ScreenName }[] = [
-    { icon: "home", screen: "plants" },
-    { icon: "maximize", screen: "scan" },
-    { icon: "settings", screen: "settings" },
-  ];
-
-  return (
-    <View
-      style={[styles.navContainer, { bottom: Math.max(22, bottomInset + 16) }]}
-    >
-      {items.map((item) => {
-        const isActive = item.screen === activeScreen;
-
-        return (
-          <Pressable
-            accessibilityRole="button"
-            key={item.screen}
-            onPress={() => onChange(item.screen)}
-            style={({ pressed }) => [
-              styles.navButton,
-              isActive && styles.navButtonActive,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Feather
-              color={isActive ? accentColor : "#646464"}
-              name={item.icon}
-              size={24}
-            />
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-function PlaceholderScreen({ title }: { title: string }) {
-  const { logout } = useAuth();
-
-  return (
-    <View style={styles.placeholderScreen}>
-      <Text style={styles.screenTitle}>
-        {title === "scan" ? "Scan :" : "Settings :"}
-      </Text>
-      {title === "settings" ? (
-        <Pressable
-          onPress={logout}
-          style={({ pressed }) => [
-            styles.logoutButton,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Text style={styles.logoutText}>Logout</Text>
-        </Pressable>
-      ) : null}
-    </View>
-  );
-}
-
 const webInputNoOutline = { outlineStyle: "none" } as never;
 
 const styles = StyleSheet.create({
-  appRoot: {
-    backgroundColor: "#ffffff",
-    flex: 1,
-  },
   screen: {
     backgroundColor: "#ffffff",
     flex: 1,
@@ -746,15 +775,28 @@ const styles = StyleSheet.create({
     top: 2,
   },
   imagePlaceholder: {
+    height: 128,
+    marginLeft: 2,
+    marginTop: 9,
+    width: "82%",
+  },
+  emptyImageBox: {
     alignItems: "center",
     borderColor: "#d0d0d0",
     borderRadius: 4,
     borderWidth: 1,
-    height: 128,
     justifyContent: "center",
-    marginLeft: 2,
-    marginTop: 9,
-    width: "82%",
+  },
+  imageFrame: {
+    backgroundColor: "#f5f5f5",
+    borderColor: "#d0d0d0",
+    borderRadius: 4,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  plantImage: {
+    height: "100%",
+    width: "100%",
   },
   waterColumn: {
     alignItems: "center",
@@ -818,7 +860,7 @@ const styles = StyleSheet.create({
   modalCard: {
     backgroundColor: "#ffffff",
     borderRadius: 18,
-    minHeight: 326,
+    minHeight: 356,
     paddingHorizontal: 18,
     paddingTop: 11,
     shadowColor: "#6f777b",
@@ -850,15 +892,47 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 17,
   },
-  modalImageBox: {
-    alignItems: "center",
-    borderColor: "#b9b9b9",
-    borderRadius: 4,
-    borderStyle: "dashed",
-    borderWidth: 1,
-    height: 127,
-    justifyContent: "center",
+  modalImageColumn: {
+    position: "relative",
     width: 184,
+  },
+  modalImageBox: {
+    height: 127,
+    width: 184,
+  },
+  photoActionButton: {
+    alignItems: "center",
+    borderColor: "#d3d3d3",
+    borderRadius: 4,
+    borderWidth: 1,
+    height: 30,
+    justifyContent: "center",
+    marginTop: 8,
+  },
+  photoActionText: {
+    color: "#555555",
+    fontFamily: Fonts.mono,
+    fontSize: 11,
+  },
+  photoRemoveButton: {
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    borderColor: "#e0e0e0",
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 30,
+    justifyContent: "center",
+    position: "absolute",
+    right: 6,
+    top: 6,
+    width: 30,
+  },
+  photoErrorText: {
+    color: "#9f2f1f",
+    fontFamily: Fonts.mono,
+    fontSize: 10,
+    lineHeight: 14,
+    marginTop: 6,
   },
   noteColumn: {
     flex: 1,
@@ -940,62 +1014,6 @@ const styles = StyleSheet.create({
     padding: 8,
     position: "absolute",
     right: -4,
-  },
-  navContainer: {
-    alignSelf: "center",
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderColor: "#e6e6e6",
-    borderRadius: 22,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 14,
-    height: 43,
-    justifyContent: "center",
-    paddingHorizontal: 14,
-    position: "absolute",
-    shadowColor: "#626a70",
-    shadowOffset: { width: 4, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 9,
-  },
-  navButton: {
-    alignItems: "center",
-    borderRadius: 15,
-    height: 31,
-    justifyContent: "center",
-    width: 36,
-  },
-  navButtonActive: {
-    backgroundColor: "#f6fffa",
-  },
-  placeholderScreen: {
-    backgroundColor: "#ffffff",
-    flex: 1,
-    paddingHorizontal: 32,
-    paddingTop: 112,
-  },
-  logoutButton: {
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderColor: "#eeeeee",
-    borderRadius: 22,
-    borderWidth: 1,
-    height: 45,
-    justifyContent: "center",
-    marginTop: 35,
-    shadowColor: "#6f777b",
-    shadowOffset: { width: 4, height: 6 },
-    shadowOpacity: 0.32,
-    shadowRadius: 7,
-    width: 150,
-    elevation: 7,
-  },
-  logoutText: {
-    color: accentColor,
-    fontFamily: Fonts.mono,
-    fontSize: 16,
   },
   pressed: {
     opacity: 0.72,
