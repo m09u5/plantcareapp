@@ -18,6 +18,7 @@ model Plant {
   name        String
   lastWatered DateTime @default(now())
   interval    Int
+  imageUrl    String?
   userId      Int
   user        User     @relation(fields: [userId], references: [id])
 }

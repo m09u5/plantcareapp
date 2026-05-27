@@ -36,6 +36,12 @@
         }
       ],
       "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "PlantCare needs access to your gallery so you can add photos to your plants."
+        }
+      ],
       "expo-web-browser"
     ],
     "experiments": {

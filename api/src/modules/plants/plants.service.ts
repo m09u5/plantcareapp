@@ -7,17 +7,28 @@ export async function getUserPlants(userId: number) {
   });
 }
 
-export async function createUserPlant(userId: number, name: string, interval: number) {
+function normalizeImageUrl(imageUrl?: string | null) {
+  return imageUrl?.trim() || null;
+}
+
+export async function createUserPlant(userId: number, name: string, interval: number, imageUrl?: string | null) {
   return prisma.plant.create({
     data: {
       name: name.trim(),
       interval,
+      imageUrl: normalizeImageUrl(imageUrl),
       userId,
     },
   });
 }
 
-export async function updateUserPlant(userId: number, plantId: number, name: string, interval: number) {
+export async function updateUserPlant(
+  userId: number,
+  plantId: number,
+  name: string,
+  interval: number,
+  imageUrl?: string | null,
+) {
   const existingPlant = await prisma.plant.findFirst({
     where: {
       id: plantId,
@@ -34,6 +45,27 @@ export async function updateUserPlant(userId: number, plantId: number, name: str
     data: {
       name: name.trim(),
       interval,
+      ...(imageUrl !== undefined ? { imageUrl: normalizeImageUrl(imageUrl) } : {}),
+    },
+  });
+}
+
+export async function updateUserPlantPhoto(userId: number, plantId: number, imageUrl?: string | null) {
+  const existingPlant = await prisma.plant.findFirst({
+    where: {
+      id: plantId,
+      userId,
+    },
+  });
+
+  if (!existingPlant) {
+    return null;
+  }
+
+  return prisma.plant.update({
+    where: { id: plantId },
+    data: {
+      imageUrl: normalizeImageUrl(imageUrl),
     },
   });
 }

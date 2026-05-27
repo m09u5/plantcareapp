@@ -19,7 +19,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
+app.use(express.json({ limit: '6mb' }));
 app.use('/api-docs', swaggerUiServe, swaggerUiSetup);
 app.use('/auth', authRouter);
 app.use('/plants', plantsRouter);
