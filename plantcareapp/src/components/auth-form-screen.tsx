@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Fonts } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
+import { ApiError } from '@/lib/api';
 
 const accentColor = '#00d47a';
 
@@ -26,6 +27,7 @@ export function AuthFormScreen({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, register } = useAuth();
   const insets = useSafeAreaInsets();
@@ -33,6 +35,7 @@ export function AuthFormScreen({
 
   async function handleSubmit() {
     setError(null);
+    setSuccess(null);
 
     if (!email.trim() || !password) {
       setError('Podaj email i haslo.');
@@ -50,10 +53,16 @@ export function AuthFormScreen({
       if (isLogin) {
         await login(email.trim(), password);
       } else {
-        await register(email.trim(), password);
+        const registration = await register(email.trim(), password);
+        setPassword('');
+        setSuccess(registration.message || 'Konto zostalo utworzone. Sprawdz email i aktywuj konto przed logowaniem.');
       }
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Cos poszlo nie tak.');
+      if (submitError instanceof ApiError && submitError.code === 'EMAIL_NOT_VERIFIED') {
+        setError('Aktywuj konto linkiem z emaila przed logowaniem.');
+      } else {
+        setError(submitError instanceof Error ? submitError.message : 'Cos poszlo nie tak.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -61,6 +70,7 @@ export function AuthFormScreen({
 
   function switchMode() {
     setError(null);
+    setSuccess(null);
     onSecondaryAction();
   }
 
@@ -118,6 +128,7 @@ export function AuthFormScreen({
             />
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            {success ? <Text style={styles.successText}>{success}</Text> : null}
           </View>
 
           <View style={styles.actionArea}>
@@ -270,6 +281,14 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#9f2f1f',
+    fontFamily: Fonts.mono,
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: -7,
+    textAlign: 'center',
+  },
+  successText: {
+    color: '#087a4d',
     fontFamily: Fonts.mono,
     fontSize: 11,
     lineHeight: 16,

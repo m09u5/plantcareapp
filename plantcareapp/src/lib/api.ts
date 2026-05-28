@@ -10,6 +10,11 @@ export type AuthResponse = {
   token: string;
 };
 
+export type RegisterResponse = {
+  user: AuthUser;
+  message: string;
+};
+
 export type PlantStatus = 'ok' | 'needs_watering';
 
 export type Plant = {
@@ -28,6 +33,16 @@ type ApiErrorResponse = {
   message?: string;
 };
 
+export class ApiError extends Error {
+  code?: string;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+  }
+}
+
 function isApiErrorResponse(payload: unknown): payload is ApiErrorResponse {
   return typeof payload === 'object' && payload !== null && 'message' in payload;
 }
@@ -43,8 +58,9 @@ async function parseApiResponse<T>(response: Response): Promise<T> {
   const payload = (await response.json().catch(() => null)) as ApiErrorResponse | T | null;
 
   if (!response.ok) {
-    throw new Error(
+    throw new ApiError(
       isApiErrorResponse(payload) && payload.message ? payload.message : 'Nie udalo sie polaczyc z API.',
+      isApiErrorResponse(payload) ? payload.code : undefined,
     );
   }
 
@@ -72,7 +88,7 @@ export async function registerUser(email: string, password: string) {
     body: JSON.stringify({ email, password }),
   });
 
-  return parseApiResponse<AuthResponse>(response);
+  return parseApiResponse<RegisterResponse>(response);
 }
 
 export async function apiFetch(path: string, token: string, init: RequestInit = {}) {

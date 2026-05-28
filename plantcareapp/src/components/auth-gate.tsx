@@ -1,21 +1,19 @@
-import React from 'react';
-import { ActivityIndicator, StyleSheet } from 'react-native';
+import React, { type ReactNode } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { AuthScreen } from '@/components/auth-screen';
-import { MainAppShell } from '@/components/main-app-shell';
-import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/context/auth';
-import { useTheme } from '@/hooks/use-theme';
 
-export function AuthGate() {
+const accentColor = '#00d47a';
+
+export function AuthGate({ children }: { children: ReactNode }) {
   const { isReady, user } = useAuth();
-  const theme = useTheme();
 
   if (!isReady) {
     return (
-      <ThemedView style={styles.loadingScreen}>
-        <ActivityIndicator color={theme.text} />
-      </ThemedView>
+      <View style={styles.loadingScreen}>
+        <ActivityIndicator color={accentColor} />
+      </View>
     );
   }
 
@@ -23,12 +21,13 @@ export function AuthGate() {
     return <AuthScreen />;
   }
 
-  return <MainAppShell />;
+  return children;
 }
 
 const styles = StyleSheet.create({
   loadingScreen: {
     alignItems: 'center',
+    backgroundColor: '#ffffff',
     flex: 1,
     justifyContent: 'center',
   },
