@@ -1,11 +1,10 @@
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
-import { Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, Text, TextInput, View, Image } from 'react-native';
 
 import { Fonts } from '@/constants/theme';
 import { IntervalSlider } from './interval-slider';
-import { PlantPhoto } from './plant-photo';
 import type { DraftPlant } from './plant-types';
 
 const accentColor = '#00d47a';
@@ -87,13 +86,21 @@ export function PlantEditorModal({
           />
 
           <View style={styles.modalMainRow}>
+            {/* KOLUMNA ZE ZDJĘCIEM */}
             <View style={styles.modalImageColumn}>
               <Pressable
                 accessibilityRole="button"
                 onPress={pickPlantImage}
-                style={({ pressed }) => [pressed && styles.pressed]}>
-                <PlantPhoto imageUrl={localDraft.imageUrl} style={styles.modalImageBox} />
+                style={({ pressed }) => [styles.dashedBox, pressed && styles.pressed]}>
+                
+                {localDraft.imageUrl ? (
+                  <Image source={{ uri: localDraft.imageUrl }} style={styles.uploadedImage} />
+                ) : (
+                  <Feather color="#cccccc" name="image" size={32} />
+                )}
+
               </Pressable>
+
               {localDraft.imageUrl ? (
                 <Pressable
                   accessibilityRole="button"
@@ -101,28 +108,36 @@ export function PlantEditorModal({
                   style={styles.photoRemoveButton}>
                   <Feather color="#777777" name="x" size={14} />
                 </Pressable>
-              ) : (
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={pickPlantImage}
-                  style={styles.photoActionButton}>
-                  <Text style={styles.photoActionText}>Add photo</Text>
-                </Pressable>
-              )}
+              ) : null}
+
               {imageError ? <Text style={styles.photoErrorText}>{imageError}</Text> : null}
             </View>
 
+            {/* KOLUMNA Z NOTATKĄ */}
             <View style={styles.noteColumn}>
               <Text style={styles.noteLabel}>Note:</Text>
-              <TextInput
-                multiline
-                onChangeText={(note) => setLocalDraft((current) => (current ? { ...current, note } : current))}
-                placeholder="Add note"
-                placeholderTextColor="#b8b8b8"
-                style={[styles.noteInput, Platform.OS === 'web' && styles.webInputNoOutline]}
-                textAlignVertical="top"
-                value={localDraft.note}
-              />
+              
+              <View style={[
+                styles.dashedBoxNoteContainer, 
+                localDraft.note ? styles.noBorder : null // Usunięcie ramki jeśli jest tekst
+              ]}>
+                {!localDraft.note && (
+                   <Feather color="#cccccc" name="edit-2" size={24} style={styles.editIconPlaceholder} />
+                )}
+                
+                <TextInput
+                  multiline
+                  onChangeText={(note) => setLocalDraft((current) => (current ? { ...current, note } : current))}
+                  style={[
+                    styles.noteInput, 
+                    Platform.OS === 'web' && styles.webInputNoOutline,
+                    !localDraft.note && styles.noteInputTransparent
+                  ]}
+                  textAlignVertical="top"
+                  value={localDraft.note}
+                />
+              </View>
+
             </View>
           </View>
 
@@ -201,25 +216,22 @@ const styles = StyleSheet.create({
   },
   modalImageColumn: {
     position: 'relative',
-    width: 184,
+    width: 184, 
   },
-  modalImageBox: {
-    height: 127,
-    width: 184,
-  },
-  photoActionButton: {
-    alignItems: 'center',
-    borderColor: '#d3d3d3',
+  dashedBox: {
+    borderColor: '#b9b9b9',
     borderRadius: 4,
+    borderStyle: 'dashed',
     borderWidth: 1,
-    height: 30,
+    height: 135, // Zwiększono wysokość, aby dół zrównał się z kontenerem notatki i jej tytułem
     justifyContent: 'center',
-    marginTop: 8,
+    alignItems: 'center',
+    overflow: 'hidden',
   },
-  photoActionText: {
-    color: '#555555',
-    fontFamily: Fonts.mono,
-    fontSize: 11,
+  uploadedImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   photoRemoveButton: {
     alignItems: 'center',
@@ -230,9 +242,10 @@ const styles = StyleSheet.create({
     height: 30,
     justifyContent: 'center',
     position: 'absolute',
-    right: 6,
-    top: 6,
+    right: -10,
+    top: -10,
     width: 30,
+    zIndex: 2,
   },
   photoErrorText: {
     color: '#9f2f1f',
@@ -250,18 +263,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 7,
   },
-  noteInput: {
+  dashedBoxNoteContainer: {
+    position: 'relative',
     borderColor: '#b9b9b9',
     borderRadius: 4,
     borderStyle: 'dashed',
     borderWidth: 1,
+    height: 111,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noBorder: {
+    borderWidth: 0, // Klasa usuwająca ramkę, gdy jest wpisany tekst
+  },
+  editIconPlaceholder: {
+    position: 'absolute',
+    zIndex: -1,
+  },
+  noteInput: {
     color: '#555555',
     flex: 1,
     fontFamily: Fonts.mono,
     fontSize: 12,
     lineHeight: 17,
-    minHeight: 111,
     padding: 10,
+    width: '100%',
+    height: '100%',
+  },
+  noteInputTransparent: {
+    backgroundColor: 'transparent',
   },
   webInputNoOutline,
   sliderRow: {

@@ -8,6 +8,7 @@ import {
   Text,
   TextInput,
   View,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -87,12 +88,15 @@ export function AuthFormScreen({
               paddingBottom: Math.max(insets.bottom, 28),
             },
           ]}>
+          
           <View style={styles.hero}>
-            <Text style={styles.title}>{'Plant\nCare\nApp'}</Text>
-            <View style={styles.plantPlaceholder}>
-              <Text style={styles.plantPlaceholderText}>{'PLANT\nICON'}</Text>
-            </View>
-          </View>
+  <Text style={styles.title}>{'Plant\nCare\nApp'}</Text>
+  <Image 
+    source={require('@/assets/images/Plant3.png')}
+    style={{ width: 124, height: 124, marginTop: 10 }}
+    resizeMode="contain"
+  />
+</View>
 
           <View style={styles.form}>
             <View style={styles.tabs}>
@@ -216,23 +220,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     lineHeight: 46,
   },
-  plantPlaceholder: {
-    alignItems: 'center',
-    borderColor: '#111111',
-    borderRadius: 10,
-    borderStyle: 'dashed',
-    borderWidth: 2,
-    height: 98,
-    justifyContent: 'center',
+  logoImage: {
+    width: 100,
+    height: 100,
     marginTop: 10,
-    width: 98,
-  },
-  plantPlaceholderText: {
-    color: '#111111',
-    fontFamily: Fonts.mono,
-    fontSize: 12,
-    lineHeight: 18,
-    textAlign: 'center',
   },
   form: {
     marginTop: 58,
