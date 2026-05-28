@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Fonts } from '@/constants/theme';
 
-export default function ScanScreen() {
+export function ScanScreen() {
   return (
     <View style={styles.screen}>
       <Text style={styles.screenTitle}>Scan :</Text>

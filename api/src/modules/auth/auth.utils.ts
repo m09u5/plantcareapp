@@ -94,3 +94,11 @@ export function verifyPassword(password: string, storedPassword: string) {
 
   return hashBuffer.length === storedHashBuffer.length && crypto.timingSafeEqual(hashBuffer, storedHashBuffer);
 }
+
+export function createEmailVerificationToken() {
+  return crypto.randomBytes(32).toString('base64url');
+}
+
+export function hashEmailVerificationToken(token: string) {
+  return crypto.createHash('sha256').update(token).digest('base64url');
+}

@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 
-import { loginUser, registerUser, type AuthResponse, type AuthUser } from '@/lib/api';
+import { loginUser, registerUser, type AuthResponse, type AuthUser, type RegisterResponse } from '@/lib/api';
 
 type AuthContextValue = {
   isReady: boolean;
   token: string | null;
   user: AuthUser | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<RegisterResponse>;
   logout: () => void;
 };
 
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         saveSession(await loginUser(email, password));
       },
       register: async (email, password) => {
-        saveSession(await registerUser(email, password));
+        return registerUser(email, password);
       },
       logout: () => {
         setToken(null);

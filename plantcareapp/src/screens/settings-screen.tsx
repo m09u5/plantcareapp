@@ -6,7 +6,7 @@ import { useAuth } from '@/context/auth';
 
 const accentColor = '#00d47a';
 
-export default function SettingsScreen() {
+export function SettingsScreen() {
   const { logout } = useAuth();
 
   return (
@@ -38,6 +38,7 @@ const styles = StyleSheet.create({
     borderColor: '#eeeeee',
     borderRadius: 22,
     borderWidth: 1,
+    elevation: 7,
     height: 45,
     justifyContent: 'center',
     marginTop: 35,
@@ -46,7 +47,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.32,
     shadowRadius: 7,
     width: 150,
-    elevation: 7,
   },
   logoutText: {
     color: accentColor,
