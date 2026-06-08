@@ -14,6 +14,7 @@ import type { DraftPlant } from "@/components/plants/plant-types";
 import { demoPlants, getNote } from "@/components/plants/plant-utils";
 import { Fonts } from "@/constants/theme";
 import { useAuth } from "@/context/auth";
+import { useScannedPlant } from "@/context/scanned-plant";
 import {
   createPlant,
   deletePlant,
@@ -27,6 +28,7 @@ const undoWateringMs = 5000;
 
 export default function HomeScreen() {
   const { token } = useAuth();
+  const { clearPendingDraft, pendingDraft } = useScannedPlant();
   const [plants, setPlants] = useState<Plant[]>(demoPlants);
   const [isLoading, setIsLoading] = useState(false);
   const [editingPlant, setEditingPlant] = useState<DraftPlant | null>(null);
@@ -73,6 +75,19 @@ export default function HomeScreen() {
     },
     []
   );
+
+  useEffect(() => {
+    if (!pendingDraft) {
+      return;
+    }
+
+    const previewTimer = setTimeout(() => {
+      setEditingPlant(pendingDraft);
+      clearPendingDraft();
+    }, 0);
+
+    return () => clearTimeout(previewTimer);
+  }, [clearPendingDraft, pendingDraft]);
 
   function openPlant(plant: Plant) {
     setEditingPlant({

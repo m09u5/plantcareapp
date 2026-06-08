@@ -1,21 +1,22 @@
 import { Slot } from "expo-router";
 import React from "react";
-import { useColorScheme } from "react-native";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import { AppFrame } from "@/components/app-frame";
 import { AuthGate } from "@/components/auth-gate";
 import { AuthProvider } from "@/context/auth";
+import { ScannedPlantProvider } from "@/context/scanned-plant";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
   return (
     <AuthProvider>
       <AnimatedSplashOverlay />
       <AuthGate>
-        <AppFrame>
-          <Slot />
-        </AppFrame>
+        <ScannedPlantProvider>
+          <AppFrame>
+            <Slot />
+          </AppFrame>
+        </ScannedPlantProvider>
       </AuthGate>
     </AuthProvider>
   );
