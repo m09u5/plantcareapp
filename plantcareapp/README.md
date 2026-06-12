@@ -16,3 +16,8 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm run dev
    npx expo start
    ```
+3. jest szansa ze trzeba wygenerowac prisme w api
+   
+   ```bash
+   npx prisma generate
+   ```
